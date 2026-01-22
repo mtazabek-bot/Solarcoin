@@ -1,0 +1,780 @@
+<!DOCTYPE html>
+<html lang="ru">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Импорт электроэнергии 2025 - 3D Визуализация</title>
+    <style>
+        @import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&family=Literata:wght@400;500;600;700&display=swap');
+
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: 'Inter', sans-serif;
+            background: linear-gradient(135deg, #0a0a1a 0%, #1a1a3a 50%, #0d0d2b 100%);
+            min-height: 100vh;
+            overflow-x: hidden;
+            color: #fff;
+        }
+
+        .header {
+            text-align: center;
+            padding: 30px 20px 20px;
+            position: relative;
+            z-index: 10;
+            max-width: 900px;
+            margin: 0 auto;
+        }
+
+        .header h1 {
+            font-family: 'Literata', serif;
+            font-size: 1.8rem;
+            font-weight: 600;
+            background: linear-gradient(135deg, #00d4ff 0%, #7c3aed 50%, #f472b6 100%);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            background-clip: text;
+            line-height: 1.4;
+            text-shadow: 0 0 40px rgba(0, 212, 255, 0.3);
+        }
+
+        #canvas-container {
+            width: 100%;
+            height: 65vh;
+            position: relative;
+        }
+
+        canvas {
+            display: block;
+        }
+
+        .controls {
+            position: absolute;
+            top: 20px;
+            left: 20px;
+            z-index: 100;
+            display: flex;
+            gap: 10px;
+            flex-wrap: wrap;
+        }
+
+        .control-btn {
+            background: rgba(255, 255, 255, 0.1);
+            backdrop-filter: blur(10px);
+            border: 1px solid rgba(255, 255, 255, 0.2);
+            color: #fff;
+            padding: 10px 20px;
+            border-radius: 25px;
+            cursor: pointer;
+            font-family: 'Inter', sans-serif;
+            font-size: 0.85rem;
+            transition: all 0.3s ease;
+        }
+
+        .control-btn:hover {
+            background: rgba(124, 58, 237, 0.4);
+            border-color: #7c3aed;
+            transform: translateY(-2px);
+            box-shadow: 0 10px 30px rgba(124, 58, 237, 0.3);
+        }
+
+        .control-btn.active {
+            background: linear-gradient(135deg, #7c3aed, #00d4ff);
+            border-color: transparent;
+        }
+
+        .tooltip {
+            position: fixed;
+            background: rgba(10, 10, 30, 0.95);
+            backdrop-filter: blur(20px);
+            border: 1px solid rgba(124, 58, 237, 0.5);
+            border-radius: 15px;
+            padding: 15px 20px;
+            pointer-events: none;
+            opacity: 0;
+            transition: opacity 0.3s ease;
+            z-index: 1000;
+            box-shadow: 0 20px 60px rgba(0, 0, 0, 0.5), 0 0 40px rgba(124, 58, 237, 0.2);
+        }
+
+        .tooltip.visible {
+            opacity: 1;
+        }
+
+        .tooltip-month {
+            font-size: 1.1rem;
+            font-weight: 600;
+            color: #00d4ff;
+            margin-bottom: 8px;
+        }
+
+        .tooltip-value {
+            font-size: 1.5rem;
+            font-weight: 700;
+            background: linear-gradient(135deg, #f472b6, #7c3aed);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            background-clip: text;
+        }
+
+        .tooltip-unit {
+            font-size: 0.8rem;
+            color: rgba(255, 255, 255, 0.5);
+            margin-top: 5px;
+        }
+
+        .legend {
+            display: flex;
+            justify-content: center;
+            gap: 20px;
+            padding: 20px;
+            flex-wrap: wrap;
+        }
+
+        .legend-item {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            font-size: 0.85rem;
+            color: rgba(255, 255, 255, 0.7);
+        }
+
+        .legend-color {
+            width: 20px;
+            height: 20px;
+            border-radius: 5px;
+        }
+
+        .footer {
+            text-align: center;
+            padding: 30px;
+            font-size: 0.8rem;
+            color: rgba(255, 255, 255, 0.4);
+        }
+
+        .footer a {
+            color: #7c3aed;
+            text-decoration: none;
+        }
+
+        .instructions {
+            position: absolute;
+            bottom: 20px;
+            left: 50%;
+            transform: translateX(-50%);
+            background: rgba(255, 255, 255, 0.1);
+            backdrop-filter: blur(10px);
+            padding: 10px 25px;
+            border-radius: 25px;
+            font-size: 0.85rem;
+            color: rgba(255, 255, 255, 0.7);
+            z-index: 100;
+        }
+
+        .glow-orb {
+            position: fixed;
+            width: 400px;
+            height: 400px;
+            border-radius: 50%;
+            background: radial-gradient(circle, rgba(124, 58, 237, 0.15) 0%, transparent 70%);
+            pointer-events: none;
+            z-index: 0;
+        }
+
+        .glow-orb.orb1 {
+            top: -100px;
+            right: -100px;
+        }
+
+        .glow-orb.orb2 {
+            bottom: -100px;
+            left: -100px;
+            background: radial-gradient(circle, rgba(0, 212, 255, 0.1) 0%, transparent 70%);
+        }
+
+        /* CSS 3D Labels */
+        .label-3d {
+            position: absolute;
+            pointer-events: none;
+            text-align: center;
+            font-family: 'Inter', sans-serif;
+            z-index: 50;
+        }
+
+        .label-month {
+            font-size: 0.75rem;
+            font-weight: 600;
+            color: #ffffff;
+        }
+
+        .label-value {
+            font-size: 0.7rem;
+            font-weight: 600;
+            color: #00d4ff;
+        }
+
+        .december-note {
+            position: absolute;
+            pointer-events: none;
+            text-align: left;
+            font-family: 'Inter', sans-serif;
+            z-index: 50;
+            color: #cbd5e1;
+            font-size: 0.75rem;
+            font-weight: 500;
+            max-width: 140px;
+            line-height: 1.3;
+        }
+
+        .december-arrow {
+            position: absolute;
+            pointer-events: none;
+            z-index: 50;
+        }
+
+        .december-arrow svg {
+            width: 60px;
+            height: 40px;
+        }
+
+        /* Mobile Responsive Styles */
+        @media (max-width: 768px) {
+            .header {
+                padding: 20px 15px 15px;
+            }
+
+            .header h1 {
+                font-size: 1.2rem;
+                line-height: 1.3;
+            }
+
+            #canvas-container {
+                height: 55vh;
+            }
+
+            .controls {
+                top: 10px;
+                left: 10px;
+                gap: 5px;
+            }
+
+            .control-btn {
+                padding: 8px 12px;
+                font-size: 0.7rem;
+                border-radius: 20px;
+            }
+
+            .instructions {
+                padding: 8px 15px;
+                font-size: 0.7rem;
+                bottom: 10px;
+            }
+
+            .label-month {
+                font-size: 0.6rem;
+            }
+
+            .label-value {
+                font-size: 0.55rem;
+            }
+
+            .tooltip {
+                padding: 10px 15px;
+            }
+
+            .tooltip-month {
+                font-size: 0.9rem;
+            }
+
+            .tooltip-value {
+                font-size: 1.2rem;
+            }
+
+            .december-note {
+                font-size: 0.65rem;
+                max-width: 100px;
+            }
+
+            .december-arrow svg {
+                width: 50px;
+                height: 35px;
+            }
+
+            .footer {
+                padding: 20px;
+                font-size: 0.7rem;
+            }
+        }
+
+        @media (max-width: 480px) {
+            .header h1 {
+                font-size: 1rem;
+            }
+
+            #canvas-container {
+                height: 50vh;
+            }
+
+            .control-btn {
+                padding: 6px 10px;
+                font-size: 0.65rem;
+            }
+
+            .label-month {
+                font-size: 0.5rem;
+            }
+
+            .label-value {
+                font-size: 0.45rem;
+            }
+
+            .instructions {
+                display: none;
+            }
+
+            .glow-orb {
+                width: 200px;
+                height: 200px;
+            }
+        }
+    </style>
+</head>
+
+<body>
+    <div class="glow-orb orb1"></div>
+    <div class="glow-orb orb2"></div>
+
+    <div class="header">
+        <h1>⚡ За 2025 год компания «Соларкоин» импортировала из российской «Интер РАО» 110,2 млн кВт·ч электроэнергии
+        </h1>
+    </div>
+
+    <div id="canvas-container">
+        <div class="controls">
+            <button class="control-btn active" onclick="setView('bars')">📊 Столбцы</button>
+            <button class="control-btn" onclick="setView('circular')">🔄 Круговая</button>
+            <button class="control-btn" onclick="toggleRotation()">🔄 Авто-вращение</button>
+        </div>
+        <div class="instructions">🖱️ Перетаскивайте для вращения • Прокрутка для масштаба</div>
+
+        <!-- Labels container -->
+        <div id="labels-container"></div>
+
+        <!-- December note -->
+        <div class="december-arrow" id="december-arrow">
+            <svg viewBox="0 0 80 50" fill="none" style="width: 80px; height: 50px;">
+                <path d="M70 5 L40 40" stroke="#cbd5e1" stroke-width="2" fill="none" stroke-linecap="round" />
+                <path d="M40 40 L45 32" stroke="#cbd5e1" stroke-width="2" fill="none" stroke-linecap="round" />
+                <path d="M40 40 L48 38" stroke="#cbd5e1" stroke-width="2" fill="none" stroke-linecap="round" />
+            </svg>
+        </div>
+        <div class="december-note" id="december-note">Компания приостановила деятельность</div>
+    </div>
+
+    <div class="tooltip" id="tooltip">
+        <div class="tooltip-month" id="tooltip-month"></div>
+        <div class="tooltip-value" id="tooltip-value"></div>
+        <div class="tooltip-unit">кВт·ч</div>
+    </div>
+
+    <div class="footer">
+        Источник: ОсОО «СОЛАРКОИН» • Данные за 2025 год
+    </div>
+
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/three@0.128.0/examples/js/controls/OrbitControls.js"></script>
+
+    <script>
+        // Data - Purple color (#7c3aed) for all except December (gray)
+        const mainColor = '#7c3aed';
+        const decemberColor = '#94a3b8';
+
+        const data = [
+            { month: 'Январь', value: 12144000, color: mainColor },
+            { month: 'Февраль', value: 10976000, color: mainColor },
+            { month: 'Март', value: 12594000, color: mainColor },
+            { month: 'Апрель', value: 9550000, color: mainColor },
+            { month: 'Май', value: 9846000, color: mainColor },
+            { month: 'Июнь', value: 9550000, color: mainColor },
+            { month: 'Июль', value: 12216000, color: mainColor },
+            { month: 'Август', value: 8118000, color: mainColor },
+            { month: 'Сентябрь', value: 11124000, color: mainColor },
+            { month: 'Октябрь', value: 10148000, color: mainColor },
+            { month: 'Ноябрь', value: 3960000, color: mainColor },
+            { month: 'Декабрь', value: 0, color: decemberColor }
+        ];
+
+        const maxValue = Math.max(...data.map(d => d.value));
+
+        // Format number to millions
+        function formatValue(value) {
+            if (value === 0) return '0';
+            return (value / 1000000).toFixed(1) + ' млн';
+        }
+
+        // Three.js setup
+        let scene, camera, renderer, controls;
+        let bars = [];
+        let glows = [];
+        let currentView = 'bars';
+        let autoRotate = true;
+        let raycaster, mouse;
+        let hoveredBar = null;
+
+        const container = document.getElementById('canvas-container');
+        const tooltip = document.getElementById('tooltip');
+        const labelsContainer = document.getElementById('labels-container');
+        const decemberNote = document.getElementById('december-note');
+        const decemberArrow = document.getElementById('december-arrow');
+
+        function init() {
+            // Scene
+            scene = new THREE.Scene();
+            scene.background = new THREE.Color(0x0a0a1a);
+            scene.fog = new THREE.Fog(0x0a0a1a, 20, 50);
+
+            // Camera
+            camera = new THREE.PerspectiveCamera(60, container.clientWidth / container.clientHeight, 0.1, 1000);
+            camera.position.set(15, 12, 15);
+
+            // Renderer
+            renderer = new THREE.WebGLRenderer({ antialias: true, alpha: true });
+            renderer.setSize(container.clientWidth, container.clientHeight);
+            renderer.setPixelRatio(window.devicePixelRatio);
+            renderer.shadowMap.enabled = false;
+            container.appendChild(renderer.domElement);
+
+            // Controls
+            controls = new THREE.OrbitControls(camera, renderer.domElement);
+            controls.enableDamping = true;
+            controls.dampingFactor = 0.05;
+            controls.autoRotate = autoRotate;
+            controls.autoRotateSpeed = 0.5;
+            controls.minDistance = 8;
+            controls.maxDistance = 35;
+            controls.maxPolarAngle = Math.PI / 2.1;
+
+            // Raycaster
+            raycaster = new THREE.Raycaster();
+            mouse = new THREE.Vector2();
+
+            // Lights
+            const ambientLight = new THREE.AmbientLight(0xffffff, 0.4);
+            scene.add(ambientLight);
+
+            const mainLight = new THREE.DirectionalLight(0xffffff, 0.8);
+            mainLight.position.set(10, 20, 10);
+            scene.add(mainLight);
+
+            const pointLight1 = new THREE.PointLight(0x7c3aed, 0.8, 40);
+            pointLight1.position.set(-10, 10, -10);
+            scene.add(pointLight1);
+
+            const pointLight2 = new THREE.PointLight(0x7c3aed, 0.8, 40);
+            pointLight2.position.set(10, 5, 10);
+            scene.add(pointLight2);
+
+            // Ground
+            createGround();
+
+            // Create bars
+            createBars();
+
+            // Create HTML labels
+            createLabels();
+
+            // Events
+            window.addEventListener('resize', onWindowResize);
+            container.addEventListener('mousemove', onMouseMove);
+            container.addEventListener('mouseleave', onMouseLeave);
+
+            animate();
+        }
+
+        function createGround() {
+            // Grid
+            const gridHelper = new THREE.GridHelper(30, 30, 0x2a2a4a, 0x1a1a3a);
+            gridHelper.position.y = -0.01;
+            scene.add(gridHelper);
+
+            // Platform
+            const platformGeometry = new THREE.CylinderGeometry(14, 14, 0.3, 64);
+            const platformMaterial = new THREE.MeshStandardMaterial({
+                color: 0x1a1a3a,
+                metalness: 0.8,
+                roughness: 0.2,
+                transparent: true,
+                opacity: 0.8
+            });
+            const platform = new THREE.Mesh(platformGeometry, platformMaterial);
+            platform.position.y = -0.15;
+            scene.add(platform);
+
+            // Center ring with purple glow
+            const ringGeometry = new THREE.TorusGeometry(10, 0.1, 16, 100);
+            const ringMaterial = new THREE.MeshBasicMaterial({
+                color: 0x7c3aed,
+                transparent: true,
+                opacity: 0.6
+            });
+            const ring = new THREE.Mesh(ringGeometry, ringMaterial);
+            ring.rotation.x = -Math.PI / 2;
+            ring.position.y = 0.01;
+            scene.add(ring);
+        }
+
+        function createBars() {
+            bars.forEach(bar => {
+                scene.remove(bar.mesh);
+                if (bar.edges) scene.remove(bar.edges);
+            });
+            glows.forEach(glow => scene.remove(glow));
+            bars = [];
+            glows = [];
+
+            const radius = 8;
+
+            data.forEach((item, i) => {
+                const angle = (i / 12) * Math.PI * 2 - Math.PI / 2;
+                const height = item.value > 0 ? (item.value / maxValue) * 8 : 0.3;
+
+                const color = new THREE.Color(item.color);
+
+                // Main bar
+                const geometry = new THREE.BoxGeometry(1.2, height, 1.2);
+                const material = new THREE.MeshBasicMaterial({
+                    color: color
+                });
+
+                const bar = new THREE.Mesh(geometry, material);
+
+                // Edge geometry for outline glow
+                const edgesGeometry = new THREE.EdgesGeometry(geometry);
+                const edgesMaterial = new THREE.LineBasicMaterial({
+                    color: new THREE.Color(item.color).multiplyScalar(2.0),
+                    transparent: true,
+                    opacity: 1.0
+                });
+                const edges = new THREE.LineSegments(edgesGeometry, edgesMaterial);
+
+                if (currentView === 'bars') {
+                    bar.position.x = (i - 5.5) * 1.8;
+                    bar.position.z = 0;
+                } else {
+                    bar.position.x = Math.cos(angle) * radius;
+                    bar.position.z = Math.sin(angle) * radius;
+                }
+
+                bar.position.y = height / 2;
+                bar.userData = { index: i, data: item, baseHeight: height };
+
+                // Position edges
+                edges.position.copy(bar.position);
+
+                scene.add(bar);
+                scene.add(edges);
+                bars.push({ mesh: bar, edges: edges, targetY: height / 2, targetHeight: height, index: i });
+            });
+        }
+
+        function createLabels() {
+            labelsContainer.innerHTML = '';
+
+            data.forEach((item, i) => {
+                const label = document.createElement('div');
+                label.className = 'label-3d';
+                label.id = `label-${i}`;
+                label.innerHTML = `
+                    <div class="label-month">${item.month}</div>
+                    <div class="label-value">${formatValue(item.value)}</div>
+                `;
+                labelsContainer.appendChild(label);
+            });
+        }
+
+        function updateLabels() {
+            const rect = container.getBoundingClientRect();
+
+            bars.forEach((bar, i) => {
+                const label = document.getElementById(`label-${i}`);
+                if (!label) return;
+
+                const height = bar.mesh.userData.baseHeight;
+                const pos = new THREE.Vector3(
+                    bar.mesh.position.x,
+                    height + 0.8,
+                    bar.mesh.position.z
+                );
+
+                pos.project(camera);
+
+                const x = (pos.x * 0.5 + 0.5) * rect.width;
+                const y = (-pos.y * 0.5 + 0.5) * rect.height;
+
+                // Check if behind camera
+                if (pos.z > 1) {
+                    label.style.display = 'none';
+                } else {
+                    label.style.display = 'block';
+                    label.style.left = x + 'px';
+                    label.style.top = y + 'px';
+                    label.style.transform = 'translate(-50%, -100%)';
+                }
+            });
+
+            // Update December note position
+            const decBar = bars[11];
+            if (decBar) {
+                const decPos = new THREE.Vector3(
+                    decBar.mesh.position.x,
+                    1.5,
+                    decBar.mesh.position.z
+                );
+                decPos.project(camera);
+
+                const decX = (decPos.x * 0.5 + 0.5) * rect.width;
+                const decY = (-decPos.y * 0.5 + 0.5) * rect.height;
+
+                if (decPos.z > 1) {
+                    decemberNote.style.display = 'none';
+                    decemberArrow.style.display = 'none';
+                } else {
+                    decemberNote.style.display = 'block';
+                    decemberArrow.style.display = 'block';
+
+                    decemberNote.style.left = (decX + 70) + 'px';
+                    decemberNote.style.top = (decY - 80) + 'px';
+
+                    decemberArrow.style.left = (decX - 10) + 'px';
+                    decemberArrow.style.top = (decY - 45) + 'px';
+                }
+            }
+        }
+
+        function setView(view) {
+            currentView = view;
+
+            document.querySelectorAll('.control-btn').forEach(btn => btn.classList.remove('active'));
+            event.target.classList.add('active');
+
+            const radius = 8;
+
+            bars.forEach((bar, i) => {
+                const angle = (i / 12) * Math.PI * 2 - Math.PI / 2;
+                const targetX = view === 'bars' ? (i - 5.5) * 1.8 : Math.cos(angle) * radius;
+                const targetZ = view === 'bars' ? 0 : Math.sin(angle) * radius;
+
+                gsapAnimate(bar.mesh.position, 'x', targetX, 1000);
+                gsapAnimate(bar.mesh.position, 'z', targetZ, 1000);
+
+                if (bar.edges) {
+                    gsapAnimate(bar.edges.position, 'x', targetX, 1000);
+                    gsapAnimate(bar.edges.position, 'z', targetZ, 1000);
+                }
+            });
+        }
+
+        function gsapAnimate(obj, prop, target, duration) {
+            const start = obj[prop];
+            const startTime = Date.now();
+
+            function update() {
+                const elapsed = Date.now() - startTime;
+                const progress = Math.min(elapsed / duration, 1);
+                const eased = 1 - Math.pow(1 - progress, 3);
+
+                obj[prop] = start + (target - start) * eased;
+
+                if (progress < 1) {
+                    requestAnimationFrame(update);
+                }
+            }
+
+            update();
+        }
+
+        function toggleRotation() {
+            autoRotate = !autoRotate;
+            controls.autoRotate = autoRotate;
+        }
+
+        function onWindowResize() {
+            camera.aspect = container.clientWidth / container.clientHeight;
+            camera.updateProjectionMatrix();
+            renderer.setSize(container.clientWidth, container.clientHeight);
+        }
+
+        function onMouseMove(event) {
+            const rect = container.getBoundingClientRect();
+            mouse.x = ((event.clientX - rect.left) / rect.width) * 2 - 1;
+            mouse.y = -((event.clientY - rect.top) / rect.height) * 2 + 1;
+
+            raycaster.setFromCamera(mouse, camera);
+            const intersects = raycaster.intersectObjects(bars.map(b => b.mesh));
+
+            if (intersects.length > 0) {
+                const bar = intersects[0].object;
+                const barData = bar.userData.data;
+
+                if (hoveredBar !== bar) {
+                    if (hoveredBar) {
+                        hoveredBar.scale.set(1, 1, 1);
+                    }
+
+                    hoveredBar = bar;
+                    bar.scale.set(1.1, 1.05, 1.1);
+                }
+
+                document.getElementById('tooltip-month').textContent = barData.month;
+                document.getElementById('tooltip-value').textContent = barData.value.toLocaleString('ru-RU');
+
+                tooltip.style.left = event.clientX + 15 + 'px';
+                tooltip.style.top = event.clientY - 10 + 'px';
+                tooltip.classList.add('visible');
+            } else {
+                if (hoveredBar) {
+                    hoveredBar.scale.set(1, 1, 1);
+                    hoveredBar = null;
+                }
+                tooltip.classList.remove('visible');
+            }
+        }
+
+        function onMouseLeave() {
+            if (hoveredBar) {
+                hoveredBar.scale.set(1, 1, 1);
+                hoveredBar = null;
+            }
+            tooltip.classList.remove('visible');
+        }
+
+        function animate() {
+            requestAnimationFrame(animate);
+            controls.update();
+
+            // Subtle animation
+            const time = Date.now() * 0.001;
+            bars.forEach((bar, i) => {
+                const newY = bar.targetY + Math.sin(time + i * 0.3) * 0.03;
+                bar.mesh.position.y = newY;
+                if (bar.edges) {
+                    bar.edges.position.y = newY;
+                }
+            });
+
+            // Update HTML labels
+            updateLabels();
+
+            renderer.render(scene, camera);
+        }
+
+        init();
+    </script>
+</body>
+
+</html>
